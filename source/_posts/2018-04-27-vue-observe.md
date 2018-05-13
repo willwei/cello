@@ -1,54 +1,97 @@
 ---
 title: VueObserver源码学习笔记
-date: 2018-05-05 21:17:31
+date: 2018-05-13 21:58:31
 tags: 
 - vue
 ---
-源码学习笔记，还没学习完，还在这张纸上，等自己再划拉划拉
+# 学一下，很皮很开心
 
-![](/images/note-vue.jpg)
+## Vue生命周期中的渲染更新流程
 
-## 基本流程
-
-1.初始化流程：
+### Vue中响应式初始化：
 
 ```javascript
+// 在初始化属性时，初始化观察者，并且遍历属性，使其成为响应属性
 initState
--> observe
--> new Observer
-  -> walk
-    -> defineReactive
-      -> new Dep ()
--> new Watcher (vm, updateComponent, noop)
+-> initData
+  -> observe(data, true)
+    -> new Observer(data)
+      -> walk
+        -> defineReactive(obj, keys[i])
+          -> new Dep () // 一个属性对应一个Dep实例
+-> new Watcher (vm, updateComponent, noop) // 运行updateComponent进行求值，updateComponent返回值始终为undefined，由依赖触发其更新
+  -> watcher.get() // 执行updateComponent函数，此时第一次运行render
 ```
 
-2.依赖收集：
+### Render函数执行时，观察者收集依赖：
 
 ```javascript
-reactiveGetter[ defineReactive ] 
+// 渲染函数运行时，触发各个属性的getter
+reactiveGetter[ defineReactive ]
   -> dep.depend()
+    -> watcher.addDep() // 收集render中用到的各个属性对应的dep，保存到watcher.deps组数中
+      -> dep.addSubs() // 此时watcher被收集为订阅者
 ```
 
-3.更新流程：
+### 属性被赋值时，值变更触发依赖更新：
 
 ```javascript
-reactiveSetter -> dep.notify() -> subs[i].update()
--> queueWatcher -> flushSchedulerQueue -> watcher.run()
--> watcher.get()
+// 属性发生变更时，触发对应属性的setter
+reactiveSetter[ defineReactive ]
+  -> dep.notify() // 发布消息
+    -> subs[i].update()
+      -> queueWatcher
+        -> flushSchedulerQueue
+          -> watcher.run()
 ```
 
-## Demo
+## 类分析
 
-...
+### Observer [观察者]
 
-## 源码分析（摘抄）
+---
+源码注释
 
-### Watcher
+`Observer class that are attached to each observed object. Once attached, the observer converts target object's property keys into getter/setters that collect dependencies and dispatches updates.`
 
-A watcher parses an expression, collects dependencies, and fires callback when the expression value changes. This is used for both the $watch() api and directives.
+解读
+
+观察者，会为目标对象上的各个属性添加`getter/setters`, 用于收集依赖与触发更新。
 
 #### properties
 
+```javascript
+value: any;
+dep: Dep;
+vmCount: number; // 某个JS对象被作为data的vm个数
+```
+
+#### methods
+
+- constructor
+- walk
+- observeArray
+
+#### 流程
+
+```javascript
+observe(data, true)
+  -> new Observer(data)
+    -> walk to defineReactive
+  -> vmCount ++
+```
+
+### Watcher [侦听器]
+
+---
+源码中的注释
+`A watcher parses an expression, collects dependencies, and fires callback when the expression value changes. This is used for both the $watch() api and directives.`
+
+侦听器，解析一个表达式，并且收集过程中的依赖，当表达式的值发生变化时，触发回调函数。
+
+#### properties
+
+```javascript
 vm: Component,
 expression: string,
 cb: Function,
@@ -67,6 +110,7 @@ newDepIds: SimpleSet,
 before: ?Function,
 getter: Function,
 value: any
+```
 
 #### methods
 
@@ -78,15 +122,30 @@ value: any
 - depend
 - teardown
 
-### Dep
+#### 流程
 
-A dep is an observable that can have multiple directives subscribing to it. Sub array to save which properties depend on it
+```javascript
+// to be continued...
+```
+
+### Dep [依赖]
+
+---
+源码注释
+
+`A dep is an observable that can have multiple directives subscribing to it. Sub array to save which properties depend on it`
+
+解读
+
+用于记录订阅者（Sub数组），并为每个vue实例的侦听器添加`属性依赖`
 
 #### properties
 
+```javascript
 static target: ?Watcher,
 id: number,
 subs: Array<Watcher>
+```
 
 #### methods
 
@@ -95,86 +154,8 @@ subs: Array<Watcher>
 - depend
 - notify
 
-### Observer
-
-Observer class that are attached to each observed object. Once attached, the observer converts target object's property keys into getter/setters that collect dependencies and dispatches updates.
-
-Walk properties to defineReactive
-
-methods:
-
-- constructor
-- walk
-
-helps:
-
-- protoAugment
-- copyAugment
-- observe
-- defineReactive
-- set
-- del
-- dependArray
-
-observe
-
-Attempt to create an observer instance for a value,returns the new observer if successfully observed,or the existing observer if the value already has one.
-
-流程：
-
-observe
- -> new Observer
- -> walk to defineReactive
+#### 流程
 
 ```javascript
-function observe (value: any, asRootData: ?boolean): Observer | void {
-
-}
-```
-
-defineReactive
-
-Define a reactive property on an Object.
-
-```javascript
-function defineReactive (
-  obj: Object,
-  key:string,
-  val: any,
-  customSetter?: ?Function,
-  shallow?: boolean
-) {
-  var dep = new Dep()
-
-  Object.defineProperty(obj, key, {
-    enumerable: true,
-    configurable: true
-    get: function reactiveGetter () {
-      const value = val
-      if (Dep.target) {
-        dep.depend()
-      }
-      return value
-    },
-    set: function reactiveSetter (newVal) {
-      dep.notify()
-    }
-  })
-
-}
-```
-
-result
-
-```javascript
-{
-  __ob__: {
-    dep: {
-      id: 0
-        subs: []
-    },
-    value: 0
-    vmCount: 1
-  }
-}
+// to be continued...
 ```
