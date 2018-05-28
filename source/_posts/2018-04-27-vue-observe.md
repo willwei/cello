@@ -6,9 +6,10 @@ tags:
 ---
 # Vue Observer
 
-## 生命周期中的渲染更新流程
+## 渲染更新流程
 
-### 响应式初始化：
+流程一，初始化
+响应式初始化
 
 ```javascript
 // 在初始化属性时，初始化观察者，并且遍历属性，使其成为响应属性
@@ -23,7 +24,8 @@ initState
   -> watcher.get() // 执行updateComponent函数，此时第一次运行render
 ```
 
-### UpdateComponent函数执行时[watcher]，观察者收集依赖：
+流程二，收集依赖
+UpdateComponent函数执行时[watcher]，观察者收集依赖：
 
 ```javascript
 // 渲染函数运行时，触发各个属性的getter
@@ -33,7 +35,8 @@ reactiveGetter[ defineReactive ]
       -> dep.addSubs() // 此时watcher被收集为订阅者
 ```
 
-### 属性被赋值时，值变更触发依赖更新：
+流程三，触发更新
+属性被赋值时，值变更触发依赖更新：
 
 ```javascript
 // 属性发生变更时，触发对应属性的setter
@@ -45,7 +48,7 @@ reactiveSetter[ defineReactive ]
           -> watcher.run()
 ```
 
-## 类分析
+## 实现
 
 ### Observer [观察者]
 
@@ -58,7 +61,7 @@ reactiveSetter[ defineReactive ]
 
 观察者，会为目标对象上的各个属性添加`getter/setters`, 用于收集依赖，触发更新。
 
-#### properties
+#### 属性
 
 ```javascript
 value: any;
@@ -66,7 +69,7 @@ dep: Dep;
 vmCount: number; // 某个JS对象被作为data的vm个数
 ```
 
-#### methods
+#### 方法
 
 - constructor
 - walk
@@ -104,7 +107,7 @@ defineReactive
 
 侦听器，解析一个表达式，并且收集过程中的依赖，当表达式的值发生变化时，触发回调函数。
 
-#### properties
+#### 属性
 
 ```javascript
 vm: Component,
@@ -127,7 +130,7 @@ getter: Function,
 value: any
 ```
 
-#### methods
+#### 方法
 
 - get
 - cleanupDeps
@@ -164,7 +167,7 @@ new Watcher(vm, expOrFn, cb, opitons)
 
 用于记录订阅者（Sub数组），并为每个vue实例的侦听器添加`属性依赖`
 
-#### properties
+#### 属性
 
 ```javascript
 static target: ?Watcher,
@@ -172,7 +175,7 @@ id: number,
 subs: Array<Watcher>
 ```
 
-#### methods
+#### 方法
 
 - addSub
 - removeSub
@@ -185,7 +188,29 @@ subs: Array<Watcher>
 new Dep()
 ```
 
-### 关于queueWatcher
+### scheduler [调度器]
+
+流程
+
+```javascript
+watcher.update()
+  - has <Map> 多次set触发的更新去重
+  - circular <Map>
+  - index <Number> 当前正在运行中的侦听器队列索引
+  - waiting <Boolean> 不同侦听器进行更新操作时，在上个侦听器完成更新之前，等待
+  - flushing <Boolean> 是否正在运行队列中的任务
+  - queueWatcher(this)
+    -> waiting = true
+    -> nextTick(flushSchedulerQueue)
+      -> flushing = true
+      -> queue.sort((a, b) => a.id - b.id)
+      -> has[id] = null
+      -> watcher.run()
+      -> resetSchedulerState()
+        -> waiting = flushing = false
+```
+
+关于queueWatcher
 
 源码注释👹
 
@@ -194,12 +219,6 @@ new Dep()
 解读
 
 将监听器放入队列尾部。重复的任务将会被跳过。
-
-```javascript
-watcher.update()
-  -> queueWatcher(this)
-    -> flushSchedulerQueue()
-```
 
 ### 关于flushSchedulerQueue
 
@@ -211,8 +230,5 @@ watcher.update()
 
 清空队列并且运行监听器的回调函数
 
-```javascript
--> queue.sort((a, b) => a.id - b.id)
--> watcher.run()
--> resetSchedulerState()
-```
+### index
+
