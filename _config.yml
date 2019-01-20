@@ -3,13 +3,13 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: SkrSkr
-subtitle:
-description:
-keywords:
+title: fruit time
+subtitle: 
+description: step on javascript
+keywords: vue webpack datastructure
 author: Will Wei
-language:
-timezone:
+language: zh-cn
+timezone: Asia/Shanghai
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'

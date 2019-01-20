@@ -1,14 +1,17 @@
 ---
-title: VueObserver源码学习笔记
+title: Vue Observer 源码学习笔记
 date: 2018-05-13 21:58:31
 tags: 
 - vue
 ---
-# Vue Observer
+# Vue Observer 
 
-## 渲染更新流程
+## 流程分析
 
-流程一，初始化
+![observer](/images/vue-observer.png)
+
+### 流程一，初始化
+
 响应式初始化
 
 ```javascript
@@ -24,7 +27,8 @@ initState
   -> watcher.get() // 执行updateComponent函数，此时第一次运行render
 ```
 
-流程二，收集依赖
+### 流程二，收集依赖
+
 UpdateComponent函数执行时[watcher]，观察者收集依赖：
 
 ```javascript
@@ -35,7 +39,8 @@ reactiveGetter[ defineReactive ]
       -> dep.addSubs() // 此时watcher被收集为订阅者
 ```
 
-流程三，触发更新
+### 流程三，触发更新
+
 属性被赋值时，值变更触发依赖更新：
 
 ```javascript
@@ -48,7 +53,7 @@ reactiveSetter[ defineReactive ]
           -> watcher.run()
 ```
 
-## 实现
+## 代码实现
 
 ### Observer [观察者]
 
@@ -230,5 +235,7 @@ watcher.update()
 
 清空队列并且运行监听器的回调函数
 
-### index
+## 检测变化的注意事项
+
+1. 不能检测到对象属性的添加或删除。
 
