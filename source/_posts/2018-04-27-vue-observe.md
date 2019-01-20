@@ -1,5 +1,5 @@
 ---
-title: Vue Observer 源码学习笔记
+title: Vue源码学习笔记--Observer
 date: 2018-05-13 21:58:31
 tags: 
 - vue
@@ -12,7 +12,8 @@ tags:
 
 ### 流程一，初始化
 
-响应式初始化
+这个操作是在initData中Observer实例初始化时通过defineReactive函数实现，同时每个属性对应一个dep实例。同时Watcher被实例化，每个组件都有相应的Watcher实例。
+
 
 ```javascript
 // 在初始化属性时，初始化观察者，并且遍历属性，使其成为响应属性
@@ -29,7 +30,7 @@ initState
 
 ### 流程二，收集依赖
 
-UpdateComponent函数执行时[watcher]，观察者收集依赖：
+当render函数运行时，getter将被触发，此时watcher收集依赖。【将wathcer添加到dep的subscribes中】
 
 ```javascript
 // 渲染函数运行时，触发各个属性的getter
